@@ -37,7 +37,6 @@ module AbuseTheForce
         LONG_DESC
         option :sandbox, :type => :boolean, :aliases => :s, :default => false
         def add(name, username, security_token)
-            puts "Add! and prompt pass"
             password = AbuseTheForce.get_password()
             host = (options[:sandbox] ? "test.salesforce.com" : "login.salesforce.com")
 
