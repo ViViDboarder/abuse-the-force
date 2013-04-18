@@ -1,2 +1,5 @@
 atf.yaml
+abusetheforce.yaml
+.atf.yaml
+.abusetheforce.yaml
 *.gem

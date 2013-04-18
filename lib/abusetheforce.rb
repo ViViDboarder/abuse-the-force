@@ -84,7 +84,7 @@ module AbuseTheForce
     class Atf_Config
         class << self
             attr_accessor :targets, :active_target, :src
-            SETTINGS_FILE="./atf.yaml"
+            SETTINGS_FILE="./.abusetheforce.yaml"
 
             # Loads configurations from yaml
             def load()
