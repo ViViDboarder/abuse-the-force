@@ -23,6 +23,8 @@ module AbuseTheForce
     def self.build_client
         target = Atf_Config.active_target
 
+        puts target.username
+
         @client = Metaforce.new :username => target.username,
             :password => target.get_password,
             :security_token => target.security_token
@@ -140,6 +142,8 @@ module AbuseTheForce
                 #write out the config
                 dump_settings
 
+                puts "Target Added"
+                target.print
             end
 
             # Selects one target as the active target for deployment
@@ -158,9 +162,6 @@ module AbuseTheForce
                             target.active = true
                             # Make it default
                             @active_target = target
-                        else
-                            # Error since there are two defaults
-                            AbuseTheForce.putw "Two defaults set. Using #{@active_target.print}"
                         end
                     else # name != name
                         # make not active
@@ -171,9 +172,13 @@ module AbuseTheForce
                 if @active_target != nil
                     # Save to yaml
                     dump_settings
+                    # Notify the user
+                    puts "Active target changed"
+                    @active_target.print
                 else
                     AbuseTheForce.pute "Target with alias #{name} was not found."
                 end
+
             end
 
             # Sets project path from default ./src
@@ -185,7 +190,6 @@ module AbuseTheForce
                     pute("No package.xml found in #{ppath}", true)
                 end
             end
-
 
         end
     end

@@ -1,5 +1,6 @@
 require 'thor'
 require 'highline/import'
+require 'abusetheforce/version'
 
 module AbuseTheForce
 
@@ -54,7 +55,7 @@ module AbuseTheForce
 
             --token=<security token> option, sets the security token to the value provided
 
-            The changes will then be written to the atf.yaml file
+            The changes will then be written to the .abusetheforce.yaml file
         LONG_DESC
         option :password, :type => :boolean, :aliases => :p, :default => false, :desc => "Prompt for password"
         option :token, :banner => "<security token>"
@@ -219,8 +220,6 @@ module AbuseTheForce
                     # Get the base name of the metadata
                     full_name = File.basename(full_name, extname)
 
-                    puts full_name
-                    puts extname
                     # Detect metadata type by file extension
                     case extname
                     when '.cls'
@@ -280,6 +279,12 @@ module AbuseTheForce
 
         desc "retrieve SUBCOMMAND ...ARGS", "Retrieve code from Salesforce.com"
         subcommand "retrieve", RetrieveCLI
+
+        desc "version", "Version information"
+        def version
+            puts "version #{AbuseTheForce::VERSION}"
+        end
+
     end
 
     # Start the command line
