@@ -45,6 +45,7 @@ module AbuseTheForce
             extract_to(Atf_Config.src).
             on_complete { |job| puts "Finished retrieve #{job.id}!" }.
             on_error { |job| puts "Something bad happened!" }.
+            on_poll { |job| puts "Polling for #{job.id}!" }.
             perform
     end
 
@@ -60,6 +61,7 @@ module AbuseTheForce
                 extract_to(Atf_Config.src).
                 on_complete { |job| puts "Finished retrieve #{job.id}!" }.
                 on_error { |job| puts "Something bad happened!" }.
+                on_poll { |job| puts "Polling for #{job.id}!" }.
                 perform
         else
             puts "#{Atf_Config.src}: Not a valid project path"
@@ -74,8 +76,36 @@ module AbuseTheForce
 
         if File.file?(dpath + '/package.xml')
             @client.deploy(File.expand_path(dpath)).
-                on_complete { |job| puts "Finished deploy #{job.id}!" }.
+                on_complete { |job| 
+                    puts "Finished deploy #{job.id}!"
+                    result = job.result
+                    if result != nil
+                        puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
+
+                        # If a failed deploy, print errors
+                        if result.success == false
+
+                            # Need messages in an array
+                            unless result.messages.kind_of? Array
+                                result.messages = [].push result.messages
+                            end
+
+                            puts "ERRORS: #{result.messages.size}"
+
+                            result.messages.each do |m|
+                                # If the path is not from the project, fix it
+                                unless m.file_name.starts_with? Atf_Config.src
+                                    m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
+                                end
+
+                                # Print our error in teh format "filename:line:column type in object message"
+                                puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
+                            end
+                        end
+                    end
+                }.
                 on_error { |job| puts "Something bad happened!" }.
+                on_poll { |job| puts "Polling for #{job.id}!" }.
                 perform
         else
             puts "#{dpath}: Not a valid project path"
