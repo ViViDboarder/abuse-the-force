@@ -53,3 +53,6 @@ Must have ruby 1.9 and gem installed
     gem build abusetheforce.gemspec
     gem install abusetheforce-X.X.X.gem # make sure the proper version is present
 
+Todo
+----
+* See Issues tab

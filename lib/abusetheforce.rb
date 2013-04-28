@@ -30,6 +30,9 @@ module AbuseTheForce
             :security_token => target.security_token
 
         Metaforce.configuration.host = target.host
+
+        # Supress some of the verbose logging
+        Metaforce.configuration.log = false
     end
 
     # Fetches a single file from the server
