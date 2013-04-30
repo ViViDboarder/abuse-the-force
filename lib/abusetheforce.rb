@@ -42,14 +42,26 @@ module AbuseTheForce
             build_client
         end
 
+        # Backup old Manifest
+        FileUtils.copy(
+            File.join(Atf_Config.get_project_path, 'package.xml'),
+            File.join(Atf_Config.get_project_path, 'package.xml-bak')
+        )
+
         manifest = Metaforce::Manifest.new(metadata_type => [full_name])
 
         @client.retrieve_unpackaged(manifest).
-            extract_to(Atf_Config.src).
+            extract_to(Atf_Config.get_project_path).
             on_complete { |job| puts "Finished retrieve #{job.id}!" }.
             on_error { |job| puts "Something bad happened!" }.
             on_poll { |job| puts "Polling for #{job.id}!" }.
             perform
+        
+        # Restore old Manifest
+        FileUtils.move(
+            File.join(Atf_Config.get_project_path, 'package.xml-bak'),
+            File.join(Atf_Config.get_project_path, 'package.xml')
+        )
     end
 
     # Fetches a whole project from the server
@@ -59,25 +71,25 @@ module AbuseTheForce
             build_client
         end
 
-        if File.file?(Atf_Config.src + '/package.xml')
+        if File.file? File.join(Atf_Config.get_project_path, 'package.xml')
             @client.retrieve_unpackaged(File.expand_path(Atf_Config.src + '/package.xml')).
-                extract_to(Atf_Config.src).
+                extract_to(Atf_Config.get_project_path).
                 on_complete { |job| puts "Finished retrieve #{job.id}!" }.
                 on_error { |job| puts "Something bad happened!" }.
                 on_poll { |job| puts "Polling for #{job.id}!" }.
                 perform
         else
-            puts "#{Atf_Config.src}: Not a valid project path"
+            puts "#{Atf_Config.get_project_path}: Not a valid project path"
         end
     end
 
-    def self.deploy_project(dpath=Atf_Config.src)
+    def self.deploy_project(dpath=Atf_Config.get_project_path)
 
         if @client == nil
             build_client
         end
 
-        if File.file?(dpath + '/package.xml')
+        if File.file? File.join(dpath, 'package.xml')
             @client.deploy(File.expand_path(dpath)).
                 on_complete { |job| 
                     puts "Finished deploy #{job.id}!"
@@ -118,13 +130,46 @@ module AbuseTheForce
 
     class Atf_Config
         class << self
-            attr_accessor :targets, :active_target, :src
-            SETTINGS_FILE="./.abusetheforce.yaml"
+            attr_accessor :targets, :active_target, :src, :root_dir
+            SETTINGS_FILE=".abusetheforce.yaml"
+
+            def locate_root(path = '.')
+
+                temp_path = path
+
+                # Look for a settings file in this path and up to root
+                until File.file? File.join(temp_path, SETTINGS_FILE)
+                    # If we hit root, stop
+                    if temp_path == '/'
+                        break
+                    end
+
+                    # Didn't find one so go up one level
+                    temp_path = File.absolute_path File.dirname(temp_path)
+                end
+
+                # If we actually found it
+                if File.file? File.join(temp_path, SETTINGS_FILE)
+                    # Return
+                    return temp_path
+                else
+                    # Return the original path
+                    return path
+                end
+
+            end
 
             # Loads configurations from yaml
             def load()
 
-                if File.file?(SETTINGS_FILE) == false
+                # Get the project root directory
+                @root_dir = locate_root
+
+                if File.file? File.join(@root_dir, SETTINGS_FILE)
+                    settings = YAML.load_file File.join(@root_dir, SETTINGS_FILE)
+                    @targets = settings[:targets]
+                    @src = settings[:src]
+                else
                     puts "No settings file found, creating one now"
                     # Settings file doesn't exist
                     # Create it
@@ -133,10 +178,6 @@ module AbuseTheForce
                     @src = './src'
 
                     dump_settings
-                else
-                    settings = YAML.load_file(SETTINGS_FILE)
-                    @targets = settings[:targets]
-                    @src = settings[:src]
                 end
 
                 # Set the default target
@@ -216,12 +257,17 @@ module AbuseTheForce
 
             # Sets project path from default ./src
             def set_project_path(ppath)
-                if File.file?(ppath + '/package.xml')
+                if File.file? File.join(ppath, 'package.xml')
                     @src = ppath
                     dump_settings
                 else
                     pute("No package.xml found in #{ppath}", true)
                 end
+            end
+
+            # Gets the full path to the src folder
+            def get_project_path
+                return File.absolute_path File.join(root_dir, src)
             end
 
         end
