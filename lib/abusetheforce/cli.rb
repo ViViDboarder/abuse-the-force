@@ -175,7 +175,7 @@ module AbuseTheForce
                 eos
 
                 # Compress the resource
-                `zip -r #{zip_path} #{resource_path}`
+                `cd $(dirname "#{resource_path}") && zip -r #{zip_path} #{resource_name}`
 
                 # Write the meta.xml
                 File.open(zip_path + '-meta.xml', 'w') {|f| f.write(static_resource_xml) }
