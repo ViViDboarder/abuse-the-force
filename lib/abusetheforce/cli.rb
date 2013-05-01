@@ -112,7 +112,7 @@ module AbuseTheForce
 
         desc "list", "Lists all targets"
         def list()
-            puts "Name\tUsername\tHost"
+            puts "Name\t\tUsername"
 
             Atf_Config.targets.values.each do |target|
                 target.print
@@ -165,6 +165,7 @@ module AbuseTheForce
 
                 zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource') 
 
+                # TODO: Find a better place to stare XML templates
                 static_resource_xml = <<-eos
 <?xml version="1.0" encoding="UTF-8"?>
 <StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">

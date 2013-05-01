@@ -296,7 +296,8 @@ module AbuseTheForce
         end
 
         def print
-            puts "#{@name}\t#{@username}\t#{@host}\t#{(@active && 'Active') || ''}"
+            #puts "#{@name}\t#{@username}\t#{@host}\t#{(@active && 'Active') || ''}"
+            puts "#{(@active ? '*' : ' ')} #{@name}\t\t#{@username}\t#{(@host.starts_with?('test') ? 'sandbox' : '')}\t"
         end
     end
 
