@@ -236,17 +236,17 @@ module AbuseTheForce
 
             # If a new target was provided, switch to it
             if options[:target] != nil
-                AbuseTheForce.temp_switch_target(options[:target])
+                target = options[:target]
             end
             if target != nil
-                AbuseTheForce.temp_switch_target(target)
+                AbuseTheForce.temp_switch_target target
             end
 
             # Deploy the project
             AbuseTheForce.deploy_project()
 
             # if using a temp target, switch back
-            if options[:target] != nil
+            if target != nil
                 AbuseTheForce.temp_switch_target
             end
         end
@@ -279,7 +279,7 @@ module AbuseTheForce
 
             # If a new target was provided, switch to it
             if options[:target] != nil
-                AbuseTheForce.temp_switch_target(options[:target])
+                AbuseTheForce.temp_switch_target options[:target]
             end
 
             # No metadata passed in, this should be a file path
@@ -318,18 +318,21 @@ module AbuseTheForce
         end
 
         desc "project", "Retrieve a whole project"
-        def project()
+        def project(target=nil)
 
             # If a new target was provided, switch to it
             if options[:target] != nil
-                AbuseTheForce.temp_switch_target options[:target]
+                target = options[:target]
+            end
+            if target != nil
+                AbuseTheForce.temp_switch_target target
             end
             
             # Retrieve the project
             AbuseTheForce.retrieve_project
 
             # if using a temp target, switch back
-            if options[:target] != nil
+            if target != nil
                 AbuseTheForce.temp_switch_target
             end
         end
