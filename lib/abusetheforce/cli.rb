@@ -45,7 +45,7 @@ module AbuseTheForce
             Atf_Config.add_target(Atf_Target.new(name, username, password, security_token, host))
         end
 
-        desc "update <alias> [--password | --sandbox=<true/false> | --securitytoken=<token>]", "Updates a remote target"
+        desc "update <alias> [--password | --sandbox=<true/false> | --token=<token>]", "Updates a remote target"
         long_desc <<-LONG_DESC
             Updates a part of target with <alias>
 
