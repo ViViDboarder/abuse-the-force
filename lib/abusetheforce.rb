@@ -90,7 +90,7 @@ module AbuseTheForce
         end
 
         if File.file? File.join(dpath, 'package.xml')
-            @client.deploy(File.expand_path(dpath)).
+            @client.deploy(File.expand_path(dpath), { :rollback_on_error => true }).
                 on_complete { |job| 
                     puts "Finished deploy #{job.id}!"
                     result = job.result
