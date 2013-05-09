@@ -256,7 +256,12 @@ module AbuseTheForce
             end
         end
 
-        desc "list", "Deploy a list of files"
+        desc "list <path to list>", "Deploy a list of files"
+        long_desc <<-LONG_DESC
+            Parameter is a path a file containing a realtive list of files to be deployed.
+
+            This can be handily used with git diff
+        LONG_DESC
         def list(list_path)
 
             # Check that this file exists

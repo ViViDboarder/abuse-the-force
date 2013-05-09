@@ -1,0 +1,29 @@
+#! /bin/bash
+
+###############################
+# Author: Ian (ViViDboarder)
+# Description: Simple command to generate lists of
+#   changed files. Designed to work with AbuseTheForce
+###############################
+
+if [ -z "$1" ]; then
+
+    echo "Usage:"
+    echo "git-changed commit [commit 2]"
+    echo ""
+    echo "If one commit is provided:"
+    echo "  Return a list of all files changed in that commit"
+    echo ""
+    echo "If two commits are provided:"
+    echo "  Return a list of all files changed between commits"
+
+    exit 0
+fi
+
+# If there is only one parameter, return the files changed in that commit
+if [ -z "$2" ]; then
+    git diff-tree --no-commit-id --name-only $1
+else
+    git diff --no-commit-id --name-only $1 $2
+fi
+

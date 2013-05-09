@@ -37,6 +37,19 @@ More advanced documentation can be found by running any of the `help` commands.
     atf retrieve help
     atf target help
 
+Deploy List
+-----------
+Deploy list gives you an easy way to only deploy files that have changed. This works really well if you are
+using some kind of version control.
+
+It takes a file of the format:
+
+    src/classes/MyClass.cls
+    src/triggers/MyTrigger.trigger
+
+You can generate a file like this using `git diff --no-commit-id --name-only` or possibly the script included 
+in the `examples` directory.
+
 Why This Over Metaforce?
 ------------------------
 * Vim and Sublime plugins (coming soon...)
