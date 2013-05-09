@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email       = ['ViViDboarder@gmail.com']
   s.homepage    = 'https://github.com/ViViDboarder/abusetheforce'
   s.summary     = %q{A Ruby gem for configuring and interacting with Metaforce}
-  s.description = %q{A Ruby gem for configuring and interacting with Metaforce}
+  s.description = %q{Detailed description on Github}
 
   #s.rubyforge_project = 'abusetheforce'
 

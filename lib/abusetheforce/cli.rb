@@ -1,8 +1,12 @@
 require 'thor'
 require 'highline/import'
+require 'abusetheforce/xmltemplates'
 require 'abusetheforce/version'
 
 module AbuseTheForce
+
+    TEMP_DIR=".atf_tmp"
+    RESOURCE_DIR="resources"
 
     # MODULE METHODS
 
@@ -24,9 +28,6 @@ module AbuseTheForce
     def self.get_password(prompt="Enter Password: ")
        ask(prompt) {|q| q.echo = false}
     end
-
-    TEMP_DIR=".atf_tmp"
-    RESOURCE_DIR="resources"
 
     # Cleans out the temp directory for further deployments
     def self.clean_temp
@@ -66,8 +67,19 @@ module AbuseTheForce
 
         # Check if a resource
         if fpath.starts_with? File.join(abs_root, RESOURCE_DIR)
-            # ZIP THE FILE
-            puts "ZIPPING"
+            # This is a resource file
+            # Zip the resource up and then deploy new fpath
+
+            resource_path = File.dirname fpath
+
+            # Until we find the parent directory of the current location is the root resource dir
+            until File.dirname(resource_path) == File.join(abs_root, RESOURCE_DIR)
+                # Go up to the next parent
+                resource_path = File.dirname resource_path
+            end
+
+            # Set the fpath to the new zip file
+            fpath = AbuseTheForce.zip_resource resource_path
         end
 
         # Make sure file is in project path
@@ -85,9 +97,6 @@ module AbuseTheForce
         # Create the temp directories
         FileUtils.mkdir_p File.join(temp_path, mdir)
 
-        # File basename
-        #basename = File.basename fpath
-
         # Copy the file
         FileUtils.copy(
             File.join(fpath), 
@@ -101,6 +110,20 @@ module AbuseTheForce
         )
 
         return true
+    end
+
+    def self.zip_resource(resource_path)
+        resource_name = File.basename resource_path
+
+        zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource') 
+
+        # Compress the resource
+        `cd $(dirname "#{resource_path}") && zip -r #{zip_path} #{resource_name}`
+
+        # Write the meta.xml
+        File.open(zip_path + '-meta.xml', 'w') {|f| f.write(XML_STATIC_RESOURCE) }
+
+        return zip_path
     end
 
     class TargetCLI < Thor
@@ -212,96 +235,19 @@ module AbuseTheForce
         LONG_DESC
         def file(fpath)
 
-            # TODO: Refactor to use clean_temp and copy_temp_file
+            AbuseTheForce.clean_temp
 
-            # Make the filepath absolute
-            fpath = File.absolute_path fpath
-            abs_root = File.absolute_path Atf_Config.root_dir
-
-            # Check that file path is in root dir
-            unless fpath.starts_with? abs_root
-                pute("File does not exist within root project: #{Atf_Config.root_dir}", true)
-            end
-
-            # Check if in resource directory
-            if fpath.starts_with? File.join(abs_root, RESOURCE_DIR)
-                # This is a resource file
-                # Zip the resource up and then deploy new fpath
-
-                resource_path = File.dirname fpath
-
-                # Until we find the parent directory of the current location is the root resource dir
-                until File.dirname(resource_path) == File.join(abs_root, RESOURCE_DIR)
-                    # Go up to the next parent
-                    resource_path = File.dirname resource_path
-                end
-
-                # TODO: Extract this logic for full deploy as well
-                resource_path = resource_path
-                resource_name = File.basename resource_path
-
-                zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource') 
-
-                # TODO: Find a better place to stare XML templates
-                static_resource_xml = <<-eos
-<?xml version="1.0" encoding="UTF-8"?>
-<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
-    <cacheControl>Public</cacheControl>
-    <contentType>application/zip</contentType>
-    <description>Static resource uploaded with Abuse the Force</description>
-</StaticResource>
-                eos
-
-                # Compress the resource
-                `cd $(dirname "#{resource_path}") && zip -r #{zip_path} #{resource_name}`
-
-                # Write the meta.xml
-                File.open(zip_path + '-meta.xml', 'w') {|f| f.write(static_resource_xml) }
-
-                # Set the fpath to the new zip file
-                fpath = zip_path
-            end
-
-            # Get path to temp project directory
-            temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+            AbuseTheForce.copy_temp_file fpath
 
             # If a new target was provided, switch to it
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target options[:target]
             end
+            
+            # Get path to temp project directory
+            temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
-            # Clear temp dir
-            if Dir.exists? temp_path
-                FileUtils.rm_r temp_path
-            end
-
-            # Get the metadata directory right before filename
-            mdir = File.basename(File.dirname(fpath))
-
-            # Create the temp directories
-            FileUtils.mkdir_p File.join(temp_path, mdir)
-
-            # Copy the package file
-            FileUtils.copy(
-                File.join(Atf_Config.get_project_path, 'package.xml'), 
-                File.join(temp_path, 'package.xml')
-            )
-
-            # File basename
-            basename = File.basename fpath
-
-            # Copy the file
-            FileUtils.copy(
-                File.join(Atf_Config.get_project_path, mdir, basename), 
-                File.join(temp_path, mdir, '/')
-            )
-
-            # Copy the metadata
-            FileUtils.copy(
-                File.join(Atf_Config.get_project_path, mdir, basename + '-meta.xml'), 
-                File.join(temp_path, mdir, '/')
-            )
-
+            # Deploy
             AbuseTheForce.deploy_project temp_path
 
             # if using a temp target, switch back
@@ -358,8 +304,18 @@ module AbuseTheForce
                 # Get path to temp project directory
                 temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
+                # If a new target was provided, switch to it
+                if options[:target] != nil
+                    AbuseTheForce.temp_switch_target options[:target]
+                end
+
                 # Deploy the path
                 AbuseTheForce.deploy_project temp_path
+
+                # if using a temp target, switch back
+                if options[:target] != nil
+                    AbuseTheForce.temp_switch_target
+                end
             end
         end
 
@@ -374,8 +330,23 @@ module AbuseTheForce
                 AbuseTheForce.temp_switch_target target
             end
 
+            # Directory that holds resources
+            resource_dir = File.join(Atf_Config.root_dir, RESOURCE_DIR)
+
+            if File.directory? resource_dir
+                puts "Resources found, zipping"
+
+                # Get an array of all directories in the resource dir
+                resources = Dir.glob(File.join(resource_dir, '*')).select {|f| File.directory? f}
+
+                # Zip each resource
+                resources.each do |resource_path|
+                    AbuseTheForce.zip_resource resource_path
+                end
+            end
+
             # Deploy the project
-            AbuseTheForce.deploy_project()
+            AbuseTheForce.deploy_project
 
             # if using a temp target, switch back
             if target != nil
