@@ -25,6 +25,84 @@ module AbuseTheForce
        ask(prompt) {|q| q.echo = false}
     end
 
+    TEMP_DIR=".atf_tmp"
+    RESOURCE_DIR="resources"
+
+    # Cleans out the temp directory for further deployments
+    def self.clean_temp
+
+        # Get path to temp project directory
+        temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+
+        # Clear temp dir
+        if Dir.exists? temp_path
+            FileUtils.rm_r temp_path
+        end
+
+        # Make the directory
+        FileUtils.mkdir_p temp_path
+        
+        # Copy the package file
+        FileUtils.copy(
+            File.join(Atf_Config.get_project_path, 'package.xml'), 
+            File.join(temp_path, 'package.xml')
+        )
+
+    end
+
+    # Copy file to temp directory
+    def self.copy_temp_file(fpath)
+
+        # Make the filepath absolute
+        fpath = File.absolute_path fpath
+        abs_root = File.absolute_path Atf_Config.root_dir
+
+        # Check that file path is in root dir
+        unless fpath.starts_with? abs_root
+            pute("File does not exist within root project: #{fpath}")
+
+            return false
+        end
+
+        # Check if a resource
+        if fpath.starts_with? File.join(abs_root, RESOURCE_DIR)
+            # ZIP THE FILE
+            puts "ZIPPING"
+        end
+
+        # Make sure file is in project path
+        unless fpath.starts_with? Atf_Config.get_project_path
+            pute("File does not exist within root project: #{fpath}")
+            return false
+        end
+
+        # Get path to temp project directory
+        temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+
+        # Get the metadata directory right before filename
+        mdir = File.basename(File.dirname(fpath))
+
+        # Create the temp directories
+        FileUtils.mkdir_p File.join(temp_path, mdir)
+
+        # File basename
+        #basename = File.basename fpath
+
+        # Copy the file
+        FileUtils.copy(
+            File.join(fpath), 
+            File.join(temp_path, mdir, '/')
+        )
+
+        # Copy the metadata
+        FileUtils.copy(
+            File.join(fpath + '-meta.xml'), 
+            File.join(temp_path, mdir, '/')
+        )
+
+        return true
+    end
+
     class TargetCLI < Thor
         
         desc "add <alias> <username> <security token> [--sandbox]", "Adds a new remote target"
@@ -128,14 +206,13 @@ module AbuseTheForce
         class_option :target, :banner => "<target alias>", :aliases => :t
         #class_option :delete, :aliases => :d
 
-        TEMP_DIR=".atf_tmp"
-        RESOURCE_DIR="resources"
-
         desc "file <path to file>", "Deploy a single file"
         long_desc <<-LONG_DESC
             Deploys file at path <path to file> to the active target.
         LONG_DESC
         def file(fpath)
+
+            # TODO: Refactor to use clean_temp and copy_temp_file
 
             # Make the filepath absolute
             fpath = File.absolute_path fpath
@@ -209,6 +286,7 @@ module AbuseTheForce
                 File.join(Atf_Config.get_project_path, 'package.xml'), 
                 File.join(temp_path, 'package.xml')
             )
+
             # File basename
             basename = File.basename fpath
 
@@ -229,6 +307,59 @@ module AbuseTheForce
             # if using a temp target, switch back
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target
+            end
+        end
+
+        desc "list", "Deploy a list of files"
+        def list(list_path)
+
+            # Check that this file exists
+            unless File.file? list_path
+                AbuseTheForce.pute("List not found", true)
+            end
+
+            unless File.file? "/Users/ifij/workspace/salesforce-apex/build.xml"
+                puts "NO BUILD"
+            end
+
+            # Clean out the temp directory
+            AbuseTheForce.clean_temp
+
+            have_files = false
+
+            # Go through each line of the file
+            IO.readlines(list_path).each do |fpath|
+
+                # have to strip off newlines
+                fpath = File.absolute_path fpath.chomp
+
+                # Check that file exists
+                if File.file? fpath
+
+                    # Did the file copy?
+                    file_copied = AbuseTheForce.copy_temp_file fpath
+
+                    # Display something to the user to know what files are copied
+                    if file_copied
+                        puts "Deploying #{fpath}"
+                    end
+
+                    # Keep track of if we have any successfullly coppied files
+                    have_files = (have_files || file_copied)
+
+                else
+                    # If we can't find the item warn the user
+                    AbuseTheForce.putw "File not found: #{fpath}"
+                end
+
+            end
+
+            if have_files
+                # Get path to temp project directory
+                temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+
+                # Deploy the path
+                AbuseTheForce.deploy_project temp_path
             end
         end
 
