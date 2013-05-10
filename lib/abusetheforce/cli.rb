@@ -269,10 +269,6 @@ module AbuseTheForce
                 AbuseTheForce.pute("List not found", true)
             end
 
-            unless File.file? "/Users/ifij/workspace/salesforce-apex/build.xml"
-                puts "NO BUILD"
-            end
-
             # Clean out the temp directory
             AbuseTheForce.clean_temp
 
@@ -286,6 +282,11 @@ module AbuseTheForce
 
                 # Check that file exists
                 if File.file? fpath
+
+                    # If this line is just a meta file, skip it
+                    if fpath.ends_with? 'meta.xml'
+                        next
+                    end
 
                     # Did the file copy?
                     file_copied = AbuseTheForce.copy_temp_file fpath
