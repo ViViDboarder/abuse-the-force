@@ -130,19 +130,23 @@ module AbuseTheForce
 
                             # Need messages in an array
                             if result.run_test_result != nil
-                                unless result.run_test_result.failures.kind_of? Array
-                                    result.run_test_result.failures = [].push result.run_test_result.failures
-                                end
 
                                 puts "TESTS RUN: #{result.run_test_result.num_tests_run} FAILURES: #{result.run_test_result.num_failures}"
 
-                                result.run_test_result.failures.each do |m|
+                                if result.run_test_result.failures != nil
 
-                                    # Print our error in teh format "filename:line:column type in object message"
-                                    if !m.success
-                                        puts "#{m.name}.#{m.method_name}: #{m.message}"
-                                        puts "Stack Trace: #{m.stack_trace}"
-                                        puts ""
+                                    unless result.run_test_result.failures.kind_of? Array
+                                        result.run_test_result.failures = [].push result.run_test_result.failures
+                                    end
+
+                                    result.run_test_result.failures.each do |m|
+
+                                        # Print our error in teh format "filename:line:column type in object message"
+                                        if !m.success
+                                            puts "#{m.name}.#{m.method_name}: #{m.message}"
+                                            puts "Stack Trace: #{m.stack_trace}"
+                                            puts ""
+                                        end
                                     end
                                 end
                             end
