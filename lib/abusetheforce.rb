@@ -83,18 +83,26 @@ module AbuseTheForce
         end
     end
 
-    def self.deploy_project(dpath=Atf_Config.get_project_path)
+    def self.deploy_test(dpath, test_name)
+
+        options = { :run_tests => [ test_name ], :rollback_on_error => true }
+
+        deploy_project(dpath, options)
+    end
+
+    def self.deploy_project(dpath=Atf_Config.get_project_path, options={ :rollback_on_error => true })
 
         if @client == nil
             build_client
         end
 
         if File.file? File.join(dpath, 'package.xml')
-            @client.deploy(File.expand_path(dpath), { :rollback_on_error => true }).
+            @client.deploy(File.expand_path(dpath), options).
                 on_complete { |job| 
                     puts "Finished deploy #{job.id}!"
                     result = job.result
                     if result != nil
+
                         puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
 
                         # If a failed deploy, print errors
@@ -105,16 +113,38 @@ module AbuseTheForce
                                 result.messages = [].push result.messages
                             end
 
-                            puts "ERRORS: #{result.messages.size}"
+                            puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
 
                             result.messages.each do |m|
+
                                 # If the path is not from the project, fix it
                                 unless m.file_name.starts_with? Atf_Config.src
                                     m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
                                 end
 
                                 # Print our error in teh format "filename:line:column type in object message"
-                                puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
+                                if !m.success
+                                    puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
+                                end
+                            end
+
+                            # Need messages in an array
+                            if result.run_test_result != nil
+                                unless result.run_test_result.failures.kind_of? Array
+                                    result.run_test_result.failures = [].push result.run_test_result.failures
+                                end
+
+                                puts "TESTS RUN: #{result.run_test_result.num_tests_run} FAILURES: #{result.run_test_result.num_failures}"
+
+                                result.run_test_result.failures.each do |m|
+
+                                    # Print our error in teh format "filename:line:column type in object message"
+                                    if !m.success
+                                        puts "#{m.name}.#{m.method_name}: #{m.message}"
+                                        puts "Stack Trace: #{m.stack_trace}"
+                                        puts ""
+                                    end
+                                end
                             end
                         end
                     end

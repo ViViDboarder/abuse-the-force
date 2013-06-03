@@ -256,6 +256,37 @@ module AbuseTheForce
             end
         end
 
+        desc "test <path to file>", "Deploy and execute a test class"
+        long_desc <<-LONG_DESC
+            Deploys file at path <path to file> to the active target and executes tests in that class.
+
+            If test fails changes are rolled back
+        LONG_DESC
+        def test(fpath)
+
+            AbuseTheForce.clean_temp
+
+            AbuseTheForce.copy_temp_file fpath
+
+            # If a new target was provided, switch to it
+            if options[:target] != nil
+                AbuseTheForce.temp_switch_target options[:target]
+            end
+            
+            # Get path to temp project directory
+            temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+
+            test_name = File.basename fpath, '.*'
+
+            # Deploy
+            AbuseTheForce.deploy_test temp_path, test_name
+
+            # if using a temp target, switch back
+            if options[:target] != nil
+                AbuseTheForce.temp_switch_target
+            end
+        end
+
         desc "list <path to list>", "Deploy a list of files"
         long_desc <<-LONG_DESC
             Parameter is a path a file containing a realtive list of files to be deployed.
