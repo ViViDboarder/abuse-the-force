@@ -98,16 +98,23 @@ module AbuseTheForce
         FileUtils.mkdir_p File.join(temp_path, mdir)
 
         # Copy the file
-        FileUtils.copy(
-            File.join(fpath), 
-            File.join(temp_path, mdir, '/')
-        )
+        if File.exists? fpath
+            FileUtils.copy(
+                File.join(fpath), 
+                File.join(temp_path, mdir, '/')
+            )
+        else
+            pute("File not found...")
+            return false
+        end
 
         # Copy the metadata
-        FileUtils.copy(
-            File.join(fpath + '-meta.xml'), 
-            File.join(temp_path, mdir, '/')
-        )
+        if File.exists? fpath + '-meta.xml'
+            FileUtils.copy(
+                File.join(fpath + '-meta.xml'), 
+                File.join(temp_path, mdir, '/')
+            )
+        end
 
         return true
     end
