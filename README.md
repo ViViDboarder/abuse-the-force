@@ -10,6 +10,7 @@ Features
 * Familiar command sub-command interface (think git)
 * Deploy single files without deploying the entire project
 * [Vim plugin](https://github.com/ViViDboarder/vim-abuse-the-force)
+* [Sublime plugin](https://github.com/ViViDboarder/sublime-abuse-the-force)
 
 Usage
 -----
@@ -52,7 +53,7 @@ in the `examples` directory.
 
 Why This Over Metaforce?
 ------------------------
-* Vim and Sublime plugins (coming soon...)
+* Vim and Sublime plugins
 * Command line configuration management
 * Options for deploying or retrieving a single file
 * Encrypted Passwords coming soon
