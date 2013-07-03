@@ -5,6 +5,13 @@
 # Description: Simple command to generate lists of
 #   changed files. Designed to work with AbuseTheForce
 ###############################
+gitismerge () {
+    local sha=$1
+    msha=$(git rev-list --merges ${sha}...${sha}~1)
+    # If commit returned is the one passed it, it is a merge
+    [ -z "$msha" ] && return 1
+    return 0
+}
 
 if [ -z "$1" ]; then
 
@@ -21,7 +28,7 @@ if [ -z "$1" ]; then
 fi
 
 # If there is only one parameter, return the files changed in that commit
-if [ -z "$2" ]; then
+if [ -z "$2" ] && gitismerge $1; then
     git diff-tree --no-commit-id --name-only $1
 else
     git diff --no-commit-id --name-only $1 $2
