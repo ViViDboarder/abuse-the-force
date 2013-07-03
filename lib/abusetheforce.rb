@@ -96,6 +96,9 @@ module AbuseTheForce
             build_client
         end
 
+        # Set auto update
+        options[:auto_update_package] = true
+
         if File.file? File.join(dpath, 'package.xml')
             @client.deploy(File.expand_path(dpath), options).
                 on_complete { |job| 
