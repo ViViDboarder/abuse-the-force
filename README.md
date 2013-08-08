@@ -32,6 +32,12 @@ from there you just execute one of the deploy commands.
     atf target activate sandbox
     # Deploy to sandbox
     atf deploy project
+    # Deploy a single file
+    atf deploy file src/classes/MyClass.cls
+    # Run a test class
+    atf deploy test src/classes/MyClassTest.cls
+    # Retrieve a single file
+    atf retrieve file src/objects/Opportunity.object
 
 More advanced documentation can be found by running any of the `help` commands.
 
@@ -50,7 +56,7 @@ It takes a file of the format:
     src/classes/MyClass.cls
     src/triggers/MyTrigger.trigger
 
-You can generate a file like this using `git diff --no-commit-id --name-only` or possibly the script included 
+You can generate a file like this using `git diff --no-commit-id --name-only` or the script included 
 in the `examples` directory.
 
 Why This Over Metaforce?
