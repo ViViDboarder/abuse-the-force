@@ -9,6 +9,8 @@ Features
 * Store orgs config file for easy switching between deploy targets
 * Familiar command sub-command interface (think git)
 * Deploy single files without deploying the entire project
+* Execute test class
+* Deploy a list of specific files to deploy
 * [Vim plugin](https://github.com/ViViDboarder/vim-abuse-the-force)
 * [Sublime plugin](https://github.com/ViViDboarder/sublime-abuse-the-force)
 
