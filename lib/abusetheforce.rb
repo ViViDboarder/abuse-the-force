@@ -7,7 +7,7 @@ module AbuseTheForce
     # Write error to screen
     def self.pute(s, fatal=false)
         puts "Error: #{s}"
-        
+
         # If fatal error, exit
         if fatal
             exit 1
@@ -56,7 +56,7 @@ module AbuseTheForce
             on_error { |job| puts "Something bad happened!" }.
             on_poll { |job| puts "Polling for #{job.id}!" }.
             perform
-        
+
         # Restore old Manifest
         FileUtils.move(
             File.join(Atf_Config.get_project_path, 'package.xml-bak'),
@@ -101,60 +101,68 @@ module AbuseTheForce
 
         if File.file? File.join(dpath, 'package.xml')
             @client.deploy(File.expand_path(dpath), options).
-                on_complete { |job| 
+                on_complete { |job|
                     puts "Finished deploy #{job.id}!"
                     result = job.result
                     if result != nil
 
-                        puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
+                        # Check if this was a test execution
+                        if result.run_test_result != nil
 
-                        # If a failed deploy, print errors
-                        if result.success == false
+                            # Display a quick Success or Failure
+                            puts "\nTests #{result.run_test_result.num_failures == "0" ? "SUCCESS" : "FAILURE"}"
 
-                            # Need messages in an array
-                            unless result.messages.kind_of? Array
-                                result.messages = [].push result.messages
-                            end
+                            # Display overview of number of successes and failures
+                            puts "TESTS RUN: #{result.run_test_result.num_tests_run} FAILURES: #{result.run_test_result.num_failures}"
 
-                            puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
+                            if result.run_test_result.failures != nil
 
-                            result.messages.each do |m|
-
-                                # If the path is not from the project, fix it
-                                unless m.file_name.starts_with? Atf_Config.src
-                                    m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
+                                # Make sure failures is an array
+                                unless result.run_test_result.failures.kind_of? Array
+                                    result.run_test_result.failures = [].push result.run_test_result.failures
                                 end
 
-                                # Print our error in teh format "filename:line:column type in object message"
-                                if !m.success
-                                    puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
+                                result.run_test_result.failures.each do |m|
+
+                                    # Print our error in teh format "filename:line:column type in object message"
+                                    if !m.success
+                                        puts "#{m.name}.#{m.method_name}: #{m.message}"
+                                        puts "Stack Trace: #{m.stack_trace}"
+                                        puts ""
+                                    end # not success
+                                end # loop through test faiulres
+                            end # failures != nil
+                        else # run_test_result != nil
+
+                            puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
+
+                            # Not a test execution, so deployment
+
+                            # If a failed deploy, print errors
+                            if result.success == false
+
+                                # Need messages in an array
+                                unless result.messages.kind_of? Array
+                                    result.messages = [].push result.messages
                                 end
-                            end
 
-                            # Need messages in an array
-                            if result.run_test_result != nil
+                                puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
 
-                                puts "TESTS RUN: #{result.run_test_result.num_tests_run} FAILURES: #{result.run_test_result.num_failures}"
+                                result.messages.each do |m|
 
-                                if result.run_test_result.failures != nil
-
-                                    unless result.run_test_result.failures.kind_of? Array
-                                        result.run_test_result.failures = [].push result.run_test_result.failures
+                                    # If the path is not from the project, fix it
+                                    unless m.file_name.starts_with? Atf_Config.src
+                                        m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
                                     end
 
-                                    result.run_test_result.failures.each do |m|
-
-                                        # Print our error in teh format "filename:line:column type in object message"
-                                        if !m.success
-                                            puts "#{m.name}.#{m.method_name}: #{m.message}"
-                                            puts "Stack Trace: #{m.stack_trace}"
-                                            puts ""
-                                        end
+                                    # Print our error in teh format "filename:line:column type in object message"
+                                    if !m.success
+                                        puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
                                     end
                                 end
-                            end
-                        end
-                    end
+                            end # success == false
+                        end # end result.run_test_result != null else
+                    end # result != nil
                 }.
                 on_error { |job| puts "Something bad happened!" }.
                 on_poll { |job| puts "Polling for #{job.id}!" }.
