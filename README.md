@@ -78,3 +78,7 @@ Must have ruby 1.9 and gem installed
 Todo
 ----
 * See Issues tab
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ViViDboarder/abuse-the-force/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
