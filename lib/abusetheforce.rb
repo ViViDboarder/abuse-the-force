@@ -107,7 +107,7 @@ module AbuseTheForce
                     if result != nil
 
                         # Check if this was a test execution
-                        if result.run_test_result != nil
+                        if options[:run_tests] != nil
 
                             # Display a quick Success or Failure
                             puts "\nTests #{result.run_test_result.num_failures == "0" ? "SUCCESS" : "FAILURE"}"
