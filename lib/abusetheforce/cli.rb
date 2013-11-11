@@ -125,7 +125,7 @@ module AbuseTheForce
         zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource') 
 
         # Compress the resource
-        `cd $(dirname "#{resource_path}") && zip -r #{zip_path} #{resource_name}`
+        `cd $(dirname "#{resource_path}") && zip -Xr #{zip_path} #{resource_name}`
 
         # Write the meta.xml
         File.open(zip_path + '-meta.xml', 'w') {|f| f.write(XML_STATIC_RESOURCE) }
@@ -510,4 +510,3 @@ module AbuseTheForce
 
 end # end module AbuseTheForce
  
-
