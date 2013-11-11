@@ -35,17 +35,32 @@ module AbuseTheForce
         # Get path to temp project directory
         temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
+        puts "Config path #{temp_path}"
+
         # Clear temp dir
         if Dir.exists? temp_path
             FileUtils.rm_r temp_path
         end
 
+    end
+
+    # Builds temp path
+    def self.build_temp
+
+        # Get path to temp project directory
+        temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
+
+        # If a temp dir exists, clear it
+        if Dir.exists? temp_path
+            self.clean_temp
+        end
+
         # Make the directory
         FileUtils.mkdir_p temp_path
-        
+
         # Copy the package file
         FileUtils.copy(
-            File.join(Atf_Config.get_project_path, 'package.xml'), 
+            File.join(Atf_Config.get_project_path, 'package.xml'),
             File.join(temp_path, 'package.xml')
         )
 
@@ -91,6 +106,11 @@ module AbuseTheForce
         # Get path to temp project directory
         temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
+        # If temp dir doesn't exist make it
+        unless Dir.exists? temp_path
+            self.build_temp
+        end
+
         # Get the metadata directory right before filename
         mdir = File.basename(File.dirname(fpath))
 
@@ -100,7 +120,7 @@ module AbuseTheForce
         # Copy the file
         if File.exists? fpath
             FileUtils.copy(
-                File.join(fpath), 
+                File.join(fpath),
                 File.join(temp_path, mdir, '/')
             )
         else
@@ -111,7 +131,7 @@ module AbuseTheForce
         # Copy the metadata
         if File.exists? fpath + '-meta.xml'
             FileUtils.copy(
-                File.join(fpath + '-meta.xml'), 
+                File.join(fpath + '-meta.xml'),
                 File.join(temp_path, mdir, '/')
             )
         end
@@ -122,7 +142,7 @@ module AbuseTheForce
     def self.zip_resource(resource_path)
         resource_name = File.basename resource_path
 
-        zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource') 
+        zip_path = File.join(Atf_Config.get_project_path, 'staticresources', resource_name + '.resource')
 
         # Compress the resource
         `cd $(dirname "#{resource_path}") && zip -Xr #{zip_path} #{resource_name}`
@@ -134,15 +154,15 @@ module AbuseTheForce
     end
 
     class TargetCLI < Thor
-        
+
         desc "add <alias> <username> <security token> [--sandbox]", "Adds a new remote target"
         long_desc <<-LONG_DESC
             Adds a new target org with the alias <alias> to your atf.yaml file
             with the provided <username>, <security token> and prompted password.
 
-            With -s or --sandbox option, sets host to "test.salesforce.com" 
+            With -s or --sandbox option, sets host to "test.salesforce.com"
 
-            To perform any actions you must have a valid target added 
+            To perform any actions you must have a valid target added
         LONG_DESC
         option :sandbox, :type => :boolean, :aliases => :s, :default => false
         def add(name, username, security_token)
@@ -250,7 +270,7 @@ module AbuseTheForce
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target options[:target]
             end
-            
+
             # Get path to temp project directory
             temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
@@ -261,6 +281,9 @@ module AbuseTheForce
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target
             end
+
+            # We're done, so clean the path
+            AbuseTheForce.clean_temp
         end
 
         desc "test <path to file>", "Deploy and execute a test class"
@@ -279,7 +302,7 @@ module AbuseTheForce
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target options[:target]
             end
-            
+
             # Get path to temp project directory
             temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
@@ -292,6 +315,9 @@ module AbuseTheForce
             if options[:target] != nil
                 AbuseTheForce.temp_switch_target
             end
+
+            # We're done, so clean the path
+            AbuseTheForce.clean_temp
         end
 
         desc "list <path to list>", "Deploy a list of files"
@@ -361,6 +387,9 @@ module AbuseTheForce
                     AbuseTheForce.temp_switch_target
                 end
             end
+
+            # We're done, so clean the path
+            AbuseTheForce.clean_temp
         end
 
         desc "project", "Deploy a whole project"
@@ -474,7 +503,7 @@ module AbuseTheForce
             if target != nil
                 AbuseTheForce.temp_switch_target target
             end
-            
+
             # Retrieve the project
             AbuseTheForce.retrieve_project
 
@@ -484,7 +513,7 @@ module AbuseTheForce
             end
         end
     end
-     
+
     # AbUse The Force
     class AtfCLI < Thor
 
@@ -509,4 +538,4 @@ module AbuseTheForce
     end
 
 end # end module AbuseTheForce
- 
+
