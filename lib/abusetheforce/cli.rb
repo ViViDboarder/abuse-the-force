@@ -35,8 +35,6 @@ module AbuseTheForce
         # Get path to temp project directory
         temp_path = File.join(Atf_Config.root_dir, TEMP_DIR)
 
-        puts "Config path #{temp_path}"
-
         # Clear temp dir
         if Dir.exists? temp_path
             FileUtils.rm_r temp_path
@@ -240,11 +238,21 @@ module AbuseTheForce
 
         desc "list", "Lists all targets"
         def list()
-            puts "Name\t\tUsername"
+            target_output = []
+
+            target_output.push ["Active", "Alias", "Username", ""]
 
             Atf_Config.targets.values.each do |target|
-                target.print
+                #target.print
+
+                target_output.push ["#{(target.active ? '  ==> ' : ' ')}",
+                                    target.name,
+                                    target.username,
+                                    "#{(target.host.starts_with?('test') ? 'sandbox' : '')}"
+                ]
             end
+
+            print_table target_output
 
         end
 
