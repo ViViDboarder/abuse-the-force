@@ -2,7 +2,14 @@ require "metaforce"
 require "base64"
 
 module AbuseTheForce
-    attr_accessor :client
+    attr_accessor :client, :can_notify
+
+    begin
+        require "terminal-notifier"
+        @can_notify = true
+    rescue LoadError
+        @can_notify = false
+    end
 
     # Write error to screen
     def self.pute(s, fatal=false)
@@ -87,10 +94,25 @@ module AbuseTheForce
 
         options = { :run_tests => [ test_name ], :rollback_on_error => true }
 
-        deploy_project(dpath, options)
+        atf_result = deploy_project(dpath, options)
+
+        if Atf_Config.notify == nil
+            Atf_Config.notify = @can_notify
+            Atf_Config.dump_settings
+        end
+
+        if @can_notify && Atf_Config.notify
+            TerminalNotifier.notify("Tests run: #{atf_result[:run]} Failures: #{atf_result[:failed]}",
+                                    :title => "AbuseTheForce",
+                                    :subtitle => "Test Execution: #{(atf_result[:success] ? "SUCCESS" : "FAILURE")}"
+            )
+        end
     end
 
     def self.deploy_project(dpath=Atf_Config.get_project_path, options={ :rollback_on_error => true })
+
+        # Result hash that we can use for our results
+        atf_result = {:success => nil, :run => nil, :failed => nil}
 
         if @client == nil
             build_client
@@ -109,11 +131,14 @@ module AbuseTheForce
                         # Check if this was a test execution
                         if options[:run_tests] != nil
 
+                            atf_result[:success] = result.run_test_result.num_failures == "0"
                             # Display a quick Success or Failure
-                            puts "\nTests #{result.run_test_result.num_failures == "0" ? "SUCCESS" : "FAILURE"}"
+                            puts "\nTests #{atf_result[:success] ? "SUCCESS" : "FAILURE"}"
 
                             # Display overview of number of successes and failures
-                            puts "TESTS RUN: #{result.run_test_result.num_tests_run} FAILURES: #{result.run_test_result.num_failures}"
+                            atf_result[:run] = result.run_test_result.num_tests_run
+                            atf_result[:failed] = result.run_test_result.num_failures
+                            puts "TESTS RUN: #{atf_result[:run]} FAILURES: #{atf_result[:failed]}"
 
                             if result.run_test_result.failures != nil
 
@@ -135,6 +160,7 @@ module AbuseTheForce
                         else # run_test_result != nil
 
                             puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
+                            atf_result[:success] = result.success
 
                             # Not a test execution, so deployment
 
@@ -161,6 +187,19 @@ module AbuseTheForce
                                     end
                                 end
                             end # success == false
+
+                            if Atf_Config.notify == nil
+                                Atf_Config.notify = @can_notify
+                                Atf_Config.dump_settings
+                            end
+
+                            if @can_notify && Atf_Config.notify
+                                TerminalNotifier.notify(" ",
+                                                        :title => "AbuseTheForce",
+                                                        :subtitle => "Deploy: #{(atf_result[:success] ? "SUCCESS" : "FAILURE")}"
+                                                       )
+                            end
+
                         end # end result.run_test_result != null else
                     end # result != nil
                 }.
@@ -171,11 +210,12 @@ module AbuseTheForce
             puts "#{dpath}: Not a valid project path"
         end
 
+        return atf_result
     end
 
     class Atf_Config
         class << self
-            attr_accessor :targets, :active_target, :src, :root_dir
+            attr_accessor :targets, :active_target, :src, :root_dir, :notify
             SETTINGS_FILE=".abusetheforce.yaml"
 
             def locate_root(path = '.')
@@ -214,6 +254,7 @@ module AbuseTheForce
                     settings = YAML.load_file File.join(@root_dir, SETTINGS_FILE)
                     @targets = settings[:targets]
                     @src = settings[:src]
+                    @notify = settings[:notify]
                 else
                     puts "No settings file found, creating one now"
                     # Settings file doesn't exist
@@ -221,6 +262,7 @@ module AbuseTheForce
                     @targets = {}
                     @active_target = nil
                     @src = './src'
+                    @notify = true
 
                     dump_settings
                 end
