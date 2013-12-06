@@ -94,19 +94,7 @@ module AbuseTheForce
 
         options = { :run_tests => [ test_name ], :rollback_on_error => true }
 
-        atf_result = deploy_project(dpath, options)
-
-        if Atf_Config.notify == nil
-            Atf_Config.notify = @can_notify
-            Atf_Config.dump_settings
-        end
-
-        if @can_notify && Atf_Config.notify
-            TerminalNotifier.notify("Tests run: #{atf_result[:run]} Failures: #{atf_result[:failed]}",
-                                    :title => "AbuseTheForce",
-                                    :subtitle => "Test Execution: #{(atf_result[:success] ? "SUCCESS" : "FAILURE")}"
-            )
-        end
+        deploy_project(dpath, options)
     end
 
     def self.deploy_project(dpath=Atf_Config.get_project_path, options={ :rollback_on_error => true })
@@ -126,10 +114,24 @@ module AbuseTheForce
                 on_complete { |job|
                     puts "Finished deploy #{job.id}!"
                     result = job.result
+
                     if result != nil
 
-                        # Check if this was a test execution
+                        # Need messages in an array
+                        unless result.messages.kind_of? Array
+                            result.messages = [].push result.messages
+                        end
+
+                        # If running a test, see if there really was a success
                         if options[:run_tests] != nil
+                            result.success = true
+                            result.messages.each do |m|
+                                result.success = result.success && m.success
+                            end
+                        end
+
+                        # Check if this was a test execution and successfully deployed
+                        if options[:run_tests] != nil && result.success
 
                             atf_result[:success] = result.run_test_result.num_failures == "0"
                             # Display a quick Success or Failure
@@ -157,6 +159,19 @@ module AbuseTheForce
                                     end # not success
                                 end # loop through test faiulres
                             end # failures != nil
+
+                            if Atf_Config.notify == nil
+                                Atf_Config.notify = @can_notify
+                                Atf_Config.dump_settings
+                            end
+
+                            if @can_notify && Atf_Config.notify
+                                TerminalNotifier.notify("Tests run: #{atf_result[:run]} Failures: #{atf_result[:failed]}",
+                                                        :title => "AbuseTheForce",
+                                                        :subtitle => "Test Execution: #{(atf_result[:success] ? "SUCCESS" : "FAILURE")}"
+                                )
+                            end
+
                         else # run_test_result != nil
 
                             puts "\nDeploy #{result.success ? "SUCCESS" : "FAILURE"}"
@@ -167,11 +182,6 @@ module AbuseTheForce
                             # If a failed deploy, print errors
                             if result.success == false
 
-                                # Need messages in an array
-                                unless result.messages.kind_of? Array
-                                    result.messages = [].push result.messages
-                                end
-
                                 puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
 
                                 result.messages.each do |m|
@@ -181,7 +191,7 @@ module AbuseTheForce
                                         m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
                                     end
 
-                                    # Print our error in teh format "filename:line:column type in object message"
+                                    # Print our error in the format "filename:line:column type in object message"
                                     if !m.success
                                         puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
                                     end
