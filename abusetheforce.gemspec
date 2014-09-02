@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'thor', '~> 0.16.0'
   s.add_dependency 'listen', '~> 0.6.0'
-  s.add_dependency 'metaforce', '~> 1.0.7'
+  s.add_dependency 'metaforce', '>= 1.0.7'
   s.add_dependency 'highline'
 
   s.add_development_dependency 'rake'

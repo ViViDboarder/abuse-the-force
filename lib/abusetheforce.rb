@@ -182,19 +182,23 @@ module AbuseTheForce
                             # If a failed deploy, print errors
                             if result.success == false
 
-                                puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
+                                if result.messages.any?
+                                    puts "DEPLOY ERRORS: #{result.messages.reject { |m| m.success }.size}"
 
-                                result.messages.each do |m|
+                                    result.messages.each do |m|
 
-                                    # If the path is not from the project, fix it
-                                    unless m.file_name.starts_with? Atf_Config.src
-                                        m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
+                                        # If the path is not from the project, fix it
+                                        unless m.file_name.starts_with? Atf_Config.src
+                                            m.file_name = m.file_name.sub(/[a-zA-Z._-]*\//, Atf_Config.src + '/')
+                                        end
+
+                                        # Print our error in the format "filename:line:column type in object message"
+                                        if !m.success
+                                            puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
+                                        end
                                     end
-
-                                    # Print our error in the format "filename:line:column type in object message"
-                                    if !m.success
-                                        puts "#{m.file_name}:#{m.line_number}:#{m.column_number} #{m.problem_type} in #{m.full_name} #{m.problem}"
-                                    end
+                                else
+                                    puts "DEPLOY ERRORS: UKNOWN"
                                 end
                             end # success == false
 
