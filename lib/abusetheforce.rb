@@ -57,18 +57,22 @@ module AbuseTheForce
 
         manifest = Metaforce::Manifest.new(metadata_type => [full_name])
 
-        @client.retrieve_unpackaged(manifest).
-            extract_to(Atf_Config.get_project_path).
-            on_complete { |job| puts "Finished retrieve #{job.id}!" }.
-            on_error { |job| puts "Something bad happened!" }.
-            on_poll { |job| puts "Polling for #{job.id}!" }.
-            perform
-
-        # Restore old Manifest
-        FileUtils.move(
-            File.join(Atf_Config.get_project_path, 'package.xml-bak'),
-            File.join(Atf_Config.get_project_path, 'package.xml')
-        )
+        begin
+            @client.retrieve_unpackaged(manifest).
+                extract_to(Atf_Config.get_project_path).
+                on_complete { |job| puts "Finished retrieve #{job.id}!" }.
+                on_error { |job| puts "Something bad happened!" }.
+                on_poll { |job| puts "Polling for #{job.id}!" }.
+                perform
+        rescue
+            puts "An error ocurred."
+        ensure
+            # Restore old Manifest
+            FileUtils.move(
+                File.join(Atf_Config.get_project_path, 'package.xml-bak'),
+                File.join(Atf_Config.get_project_path, 'package.xml')
+            )
+        end
     end
 
     # Fetches a whole project from the server
