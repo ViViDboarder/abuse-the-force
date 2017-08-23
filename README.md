@@ -1,6 +1,8 @@
 Abuse the Force
 ===============
 
+*NOTE: This is essentially unmaintained. I've been using the Force CLI*
+
 A tool expanding upon [Metaforce](https://github.com/ejholmes/metaforce) for deploying to
 multiple orgs as well as simpler setup for use as a pseudo compiler
 
